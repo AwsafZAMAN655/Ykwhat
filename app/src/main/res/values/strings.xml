@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Hand Navigation PRO</string>
+    <string name="notif_channel">Hand tracking</string>
+    <string name="notif_title">Hand Navigation PRO is running</string>
+    <string name="notif_text">The front camera is in use. Tap Stop to end tracking.</string>
+    <string name="notif_stop">Stop</string>
+    <string name="accessibility_description">Lets Hand Navigation PRO draw a pointer and perform taps, drags, scrolls and Back when you use hand gestures. It does not read your screen content.</string>
+
+    <string name="intro">Control the tablet with your hand using the front camera. Camera processing only runs while navigation is started, and a camera notification is always shown. Nothing is recorded or sent anywhere.</string>
+    <string name="a11y_note">Required: you must enable the Accessibility Service yourself. Tap \"Open Accessibility Settings\", find Hand Navigation PRO (maybe under Installed apps / Downloaded apps), and switch it on. On Android 13+ you may first need App info -> three dots menu -> Allow restricted settings.</string>
+
+    <string name="gestures_text">GESTURES\n\n
+        Index finger: move the pointer. Move your hand, the pointer follows your index fingertip.\n\n
+        Pinch (thumb + index tip touch, then release): tap. Pinch stays on target even while your fingers close.\n\n
+        Pinch and hold, then move: drag and drop. Holding a pinch without moving for half a second acts as a long-press.\n\n
+        Index + middle fingers up (ring and pinky folded): scroll. Move your hand up or down while holding this pose.\n\n
+        Closed fist (hold for about a third of a second): Back.\n\n
+        Open palm, all five fingers spread (hold for about 0.7 seconds): pause or resume tracking. Paused tracking only reacts to the open palm.</string>
+</resources>
