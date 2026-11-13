@@ -8,6 +8,13 @@ No Android Studio needed: **GitHub builds the APK for you.**
 > reviewed carefully, but the first GitHub build could still show a compile error, and the gesture thresholds
 > have never been tried on a real Honor Pad 8. See "If something fails" below. Nothing here claims it was tested.
 
+## What changed in 1.0.2 (performance)
+
+- Camera frames are now 320x240 instead of 640x480 (4x fewer pixels to convert, copy and rotate; the hand model resizes its input anyway).
+- The camera is asked for a 30 fps range, because auto-exposure in a dim room can silently drop it to ~15 fps.
+- The status box now splits time into `model` (MediaPipe) and `prep` (frame copy/rotate), so we can see what is actually slow. Try the "Use GPU" switch (restart navigation) and compare the `model` number.
+- Not measured on a real tablet: these are fixes for the most likely causes, not confirmed results.
+
 ## What changed in 1.0.1 (code review)
 
 - **Drag/scroll release:** a new touch can no longer cancel a touch that is still being released. If a drag or scroll ends while a gesture is in flight, the release is sent first and any following touch or tap waits for it. Previously a release could be dropped, leaving a touch "stuck down".

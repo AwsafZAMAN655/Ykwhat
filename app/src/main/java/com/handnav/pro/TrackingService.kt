@@ -9,15 +9,20 @@ import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.content.pm.ServiceInfo
+import android.hardware.camera2.CameraCharacteristics
+import android.hardware.camera2.CameraManager
+import android.hardware.camera2.CaptureRequest
 import android.hardware.display.DisplayManager
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.os.Process
 import android.util.Log
+import android.util.Range
 import android.util.Size
 import android.view.Display
 import android.widget.Toast
+import androidx.camera.camera2.interop.Camera2Interop
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.resolutionselector.ResolutionSelector
@@ -167,15 +172,20 @@ class TrackingService : LifecycleService(), GestureEngine.Output {
                 }
                 val resolution = ResolutionSelector.Builder()
                     .setResolutionStrategy(
-                        ResolutionStrategy(Size(640, 480), ResolutionStrategy.FALLBACK_RULE_CLOSEST_HIGHER_THEN_LOWER)
+                        ResolutionStrategy(Size(320, 240), ResolutionStrategy.FALLBACK_RULE_CLOSEST_HIGHER_THEN_LOWER)
                     )
                     .build()
-                val ia = ImageAnalysis.Builder()
+                val iaBuilder = ImageAnalysis.Builder()
                     .setResolutionSelector(resolution)
                     .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
                     .setOutputImageFormat(ImageAnalysis.OUTPUT_IMAGE_FORMAT_RGBA_8888)
                     .setTargetRotation(currentRotation())
-                    .build()
+                // Ask the camera for 30 fps. Without this, dim rooms can drop it to ~15 fps.
+                pickFpsRange()?.let { range ->
+                    Camera2Interop.Extender(iaBuilder)
+                        .setCaptureRequestOption(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, range)
+                }
+                val ia = iaBuilder.build()
                 ia.setAnalyzer(ex, analyzer!!)
                 analysis = ia
 
@@ -190,6 +200,27 @@ class TrackingService : LifecycleService(), GestureEngine.Output {
                 fail("Camera error: ${e.message}")
             }
         }, ContextCompat.getMainExecutor(this))
+    }
+
+    private fun pickFpsRange(): Range<Int>? {
+        try {
+            val cm = getSystemService(CAMERA_SERVICE) as CameraManager
+            for (id in cm.cameraIdList) {
+                val c = cm.getCameraCharacteristics(id)
+                if (c.get(CameraCharacteristics.LENS_FACING) != CameraCharacteristics.LENS_FACING_FRONT) continue
+                val ranges = c.get(CameraCharacteristics.CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES) ?: continue
+                var best: Range<Int>? = null
+                for (r in ranges) {
+                    if (r.upper > 30) continue
+                    val b = best
+                    if (b == null || r.upper > b.upper || (r.upper == b.upper && r.lower > b.lower)) best = r
+                }
+                return best
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "Could not read FPS ranges", e)
+        }
+        return null
     }
 
     private fun currentRotation(): Int {
