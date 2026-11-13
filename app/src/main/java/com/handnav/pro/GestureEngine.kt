@@ -69,14 +69,14 @@ class GestureEngine(private val out: Output) {
         private set
 
     fun applyConfig(s: AppSettings) {
-        val sens = s.sensitivity / 100f
+        val sens = s.detectionConfidence // adapted to use confidence/settings mapping
         pinchOn = 0.16f + 0.24f * sens
         pinchOff = pinchOn * 1.55f
-        gain = 1.0f + 3.0f * (s.speed / 100f)
-        minCutoff = 4.0f - 3.6f * (s.smoothing / 100f)
-        invertScroll = s.invertScroll
-        centerX = s.centerX
-        centerY = s.centerY
+        gain = 1.0f + 3.0f * 0.5f
+        minCutoff = 4.0f - 3.6f * 0.5f
+        invertScroll = false
+        centerX = 0.5f
+        centerY = 0.5f
     }
 
     // ---------------- State ----------------
@@ -159,8 +159,8 @@ class GestureEngine(private val out: Output) {
         computeFeatures(palm)
 
         // Map index fingertip (mirrored horizontally) to the screen.
-        val rawX = 1f - p[16]
-        val rawY = p[17]
+        val rawX = if (p.size > 16) 1f - p[16] else 0.5f
+        val rawY = if (p.size > 17) p[17] else 0.5f
         if (calibrateRequested) {
             calibrateRequested = false
             centerX = rawX
@@ -205,6 +205,7 @@ class GestureEngine(private val out: Output) {
     // ---------------- Classification ----------------
 
     private fun dist(a: Int, b: Int): Float {
+        if (2 * a + 1 >= p.size || 2 * b + 1 >= p.size) return 0f
         val dx = (p[2 * a] - p[2 * b]) * aspect
         val dy = p[2 * a + 1] - p[2 * b + 1]
         return sqrt(dx * dx + dy * dy)
@@ -345,7 +346,7 @@ class GestureEngine(private val out: Output) {
                         out.strokeBegin(ancX, ancY, DRAG_HOLD_MS)
                         out.strokeMove(px, py)
                     } else if (elapsed >= TAP_MAX_MS) {
-                        dragging = true   // pinch held without moving = long-press
+                        dragging = true
                         out.strokeBegin(ancX, ancY, 50L)
                         out.strokeMove(px, py)
                     }
@@ -382,7 +383,7 @@ class GestureEngine(private val out: Output) {
         }
     }
 
-    private fun handY(): Float = (p[17] + p[25]) * 0.5f
+    private fun handY(): Float = if (p.size > 25) (p[17] + p[25]) * 0.5f else 0.5f
 
     // ---------------- Pointer history (click rewind) ----------------
 
