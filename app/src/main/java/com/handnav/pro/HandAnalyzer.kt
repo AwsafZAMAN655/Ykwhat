@@ -49,7 +49,6 @@ class HandAnalyzer(
     private var lastFrameNs = 0L
     private var fpsEma = 0f
     private var infEma = 0f
-    private var prepEma = 0f
 
 
     override fun analyze(image: ImageProxy) {
@@ -57,7 +56,6 @@ class HandAnalyzer(
             if (failed) return
             val lm = landmarker ?: createLandmarker().also { landmarker = it } ?: return
 
-            val tStart = System.nanoTime()
             val w = image.width
             val h = image.height
             val plane = image.planes[0]
@@ -126,8 +124,6 @@ class HandAnalyzer(
             lastTs = ts
 
             val t0 = System.nanoTime()
-            val prepMs = (t0 - tStart) / 1_000_000f
-            prepEma = if (prepEma == 0f) prepMs else prepEma * 0.9f + prepMs * 0.1f
             val result = lm.detectForVideo(BitmapImageBuilder(upright).build(), ts)
             val t1 = System.nanoTime()
 
@@ -153,7 +149,6 @@ class HandAnalyzer(
             lastFrameNs = t1
             TrackingState.fps = fpsEma
             TrackingState.inferenceMs = infEma
-            TrackingState.prepMs = prepEma
             errorCount = 0
         } catch (e: Exception) {
             Log.e(TAG, "frame failed", e)

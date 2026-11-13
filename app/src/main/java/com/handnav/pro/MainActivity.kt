@@ -173,7 +173,7 @@ class MainActivity : AppCompatActivity() {
         sb.append("Gesture    : ").append(GestureEngine.LABELS[TrackingState.gesture.coerceIn(0, 5)])
         if (TrackingState.paused) sb.append("  (PAUSED - show open palm to resume)")
         sb.append('\n')
-        sb.append("Speed      : ").append(String.format("%.0f fps | model %.0f ms + prep %.0f ms | %s", TrackingState.fps, TrackingState.inferenceMs, TrackingState.prepMs, TrackingState.delegate)).append('\n')
+        sb.append("Speed      : ").append(String.format("%.0f fps, %.0f ms/frame, %s", TrackingState.fps, TrackingState.inferenceMs, TrackingState.delegate)).append('\n')
         sb.append("Debug      : ").append(
             String.format(
                 "idx %.2f mid %.2f ring %.2f pinky %.2f pinch %.2f",

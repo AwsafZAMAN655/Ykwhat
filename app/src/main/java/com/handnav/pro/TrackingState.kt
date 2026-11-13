@@ -8,7 +8,6 @@ object TrackingState {
     @Volatile var paused = false
     @Volatile var fps = 0f
     @Volatile var inferenceMs = 0f
-    @Volatile var prepMs = 0f
     @Volatile var delegate = "CPU"
     @Volatile var error: String? = null
 
