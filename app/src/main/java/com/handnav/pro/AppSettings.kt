@@ -2,31 +2,46 @@ package com.handnav.pro
 
 import android.content.Context
 import android.content.SharedPreferences
-import androidx.preference.PreferenceManager
 
+/** Tiny wrapper around SharedPreferences. All values are plain primitives. */
 class AppSettings(context: Context) {
-    private val prefs: SharedPreferences = PreferenceManager.getDefaultSharedPreferences(context)
+
+    val prefs: SharedPreferences =
+        context.applicationContext.getSharedPreferences("hand_nav_pro", Context.MODE_PRIVATE)
+
+    var sensitivity: Int
+        get() = prefs.getInt("sensitivity", 50)
+        set(v) = prefs.edit().putInt("sensitivity", v).apply()
+
+    var speed: Int
+        get() = prefs.getInt("speed", 40)
+        set(v) = prefs.edit().putInt("speed", v).apply()
+
+    var smoothing: Int
+        get() = prefs.getInt("smoothing", 50)
+        set(v) = prefs.edit().putInt("smoothing", v).apply()
+
+    var pointerVisible: Boolean
+        get() = prefs.getBoolean("pointer_visible", true)
+        set(v) = prefs.edit().putBoolean("pointer_visible", v).apply()
+
+    var useGpu: Boolean
+        get() = prefs.getBoolean("use_gpu", false)
+        set(v) = prefs.edit().putBoolean("use_gpu", v).apply()
+
+    var invertScroll: Boolean
+        get() = prefs.getBoolean("invert_scroll", false)
+        set(v) = prefs.edit().putBoolean("invert_scroll", v).apply()
+
+    var centerX: Float
+        get() = prefs.getFloat("center_x", 0.5f)
+        set(v) = prefs.edit().putFloat("center_x", v).apply()
+
+    var centerY: Float
+        get() = prefs.getFloat("center_y", 0.5f)
+        set(v) = prefs.edit().putFloat("center_y", v).apply()
 
     var detectionConfidence: Float
-        get() = prefs.getFloat(PREF_DETECTION_CONFIDENCE, 0.5f)
-        set(value) = prefs.edit().putFloat(PREF_DETECTION_CONFIDENCE, value).apply()
-
-    var presenceConfidence: Float
-        get() = prefs.getFloat(PREF_PRESENCE_CONFIDENCE, 0.5f)
-        set(value) = prefs.edit().putFloat(PREF_PRESENCE_CONFIDENCE, value).apply()
-
-    var trackingConfidence: Float
-        get() = prefs.getFloat(PREF_TRACKING_CONFIDENCE, 0.5f)
-        set(value) = prefs.edit().putFloat(PREF_TRACKING_CONFIDENCE, value).apply()
-
-    var mirrorX: Boolean
-        get() = prefs.getBoolean(PREF_MIRROR_X, false)
-        set(value) = prefs.edit().putBoolean(PREF_MIRROR_X, value).apply()
-
-    companion object {
-        private const val PREF_DETECTION_CONFIDENCE = "detection_confidence"
-        private const val PREF_PRESENCE_CONFIDENCE = "presence_confidence"
-        private const val PREF_TRACKING_CONFIDENCE = "tracking_confidence"
-        private const val PREF_MIRROR_X = "mirror_x"
-    }
+        get() = prefs.getFloat("detection_confidence", 0.5f)
+        set(v) = prefs.edit().putFloat("detection_confidence", v).apply()
 }
