@@ -41,7 +41,27 @@ class AppSettings(context: Context) {
         get() = prefs.getFloat("center_y", 0.5f)
         set(v) = prefs.edit().putFloat("center_y", v).apply()
 
+    /** MediaPipe min hand detection confidence (0..1). */
     var detectionConfidence: Float
         get() = prefs.getFloat("detection_confidence", 0.5f)
         set(v) = prefs.edit().putFloat("detection_confidence", v).apply()
+
+    /** MediaPipe min hand presence confidence (0..1). */
+    var presenceConfidence: Float
+        get() = prefs.getFloat("presence_confidence", 0.5f)
+        set(v) = prefs.edit().putFloat("presence_confidence", v).apply()
+
+    /** MediaPipe min tracking confidence (0..1). */
+    var trackingConfidence: Float
+        get() = prefs.getFloat("tracking_confidence", 0.5f)
+        set(v) = prefs.edit().putFloat("tracking_confidence", v).apply()
+
+    /**
+     * Mirror the camera image horizontally.
+     * Front camera frames are usually already mirrored for a “selfie” feel;
+     * keep this true unless you need the opposite.
+     */
+    var mirrorX: Boolean
+        get() = prefs.getBoolean("mirror_x", true)
+        set(v) = prefs.edit().putBoolean("mirror_x", v).apply()
 }
