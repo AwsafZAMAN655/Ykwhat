@@ -24,53 +24,50 @@ class HandAnalyzer(
     private var landmarker: HandLandmarker? = null
     private var padBmp: Bitmap? = null
     private var padBuf: ByteBuffer? = null
-    private var rotBmp: Bitmap? = null
     private var lastRotation = -1
     private val rotMatrix = Matrix()
 
     init {
-        val base = BaseOptions.builder()
-            .setModelAssetPath("hand_landmarker.task")
-            .setDelegate(Delegate.GPU)
-            .build()
+        val preferGpu = settings.useGpu
+        val primaryDelegate = if (preferGpu) Delegate.GPU else Delegate.CPU
+        val fallbackDelegate = if (preferGpu) Delegate.CPU else Delegate.GPU
 
-        val options = HandLandmarker.HandLandmarkerOptions.builder()
-            .setBaseOptions(base)
-            .setRunningMode(RunningMode.LIVE_STREAM)
-            .setNumHands(1)
-            .setMinHandDetectionConfidence(settings.detectionConfidence)
-            .setMinHandPresenceConfidence(settings.presenceConfidence)
-            .setMinTrackingConfidence(settings.trackingConfidence)
-            .setResultListener { result, _ ->
-                onResult(result, SystemClock.uptimeMillis())
-            }
-            .setErrorListener { e ->
-                Log.e("HandAnalyzer", "MediaPipe error", e)
-            }
-            .build()
+        fun buildOptions(delegate: Delegate): HandLandmarker.HandLandmarkerOptions {
+            val base = BaseOptions.builder()
+                .setModelAssetPath("hand_landmarker.task")
+                .setDelegate(delegate)
+                .build()
+            return HandLandmarker.HandLandmarkerOptions.builder()
+                .setBaseOptions(base)
+                .setRunningMode(RunningMode.LIVE_STREAM)
+                .setNumHands(1)
+                .setMinHandDetectionConfidence(settings.detectionConfidence)
+                .setMinHandPresenceConfidence(settings.presenceConfidence)
+                .setMinTrackingConfidence(settings.trackingConfidence)
+                .setResultListener { result, _ ->
+                    onResult(result, SystemClock.uptimeMillis())
+                }
+                .setErrorListener { e ->
+                    Log.e("HandAnalyzer", "MediaPipe error", e)
+                }
+                .build()
+        }
 
         landmarker = try {
-            HandLandmarker.createFromOptions(context, options)
+            HandLandmarker.createFromOptions(context, buildOptions(primaryDelegate)).also {
+                TrackingState.delegate = if (preferGpu) "GPU" else "CPU"
+            }
         } catch (e: Exception) {
-            Log.w("HandAnalyzer", "GPU delegate failed, falling back to CPU", e)
-            val cpuBase = BaseOptions.builder()
-                .setModelAssetPath("hand_landmarker.task")
-                .setDelegate(Delegate.CPU)
-                .build()
-            HandLandmarker.createFromOptions(
-                context,
-                HandLandmarker.HandLandmarkerOptions.builder()
-                    .setBaseOptions(cpuBase)
-                    .setRunningMode(RunningMode.LIVE_STREAM)
-                    .setNumHands(1)
-                    .setMinHandDetectionConfidence(settings.detectionConfidence)
-                    .setMinHandPresenceConfidence(settings.presenceConfidence)
-                    .setMinTrackingConfidence(settings.trackingConfidence)
-                    .setResultListener { result, _ ->
-                        onResult(result, SystemClock.uptimeMillis())
-                    }
-                    .build()
-            )
+            Log.w("HandAnalyzer", "$primaryDelegate delegate failed, falling back to $fallbackDelegate", e)
+            try {
+                HandLandmarker.createFromOptions(context, buildOptions(fallbackDelegate)).also {
+                    TrackingState.delegate = if (preferGpu) "CPU" else "GPU"
+                }
+            } catch (e2: Exception) {
+                Log.e("HandAnalyzer", "Both GPU and CPU delegates failed", e2)
+                TrackingState.error = e2.localizedMessage
+                null
+            }
         }
     }
 
