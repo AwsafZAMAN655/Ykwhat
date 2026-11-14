@@ -5,6 +5,7 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
+import android.content.pm.ServiceInfo
 import android.content.Intent
 import android.os.Build
 import android.util.Log
@@ -65,7 +66,16 @@ class TrackingService : LifecycleService(), GestureEngine.Output {
         TrackingState.running = true
         TrackingState.error = null
 
-        startForeground(NOTIF_ID, buildNotification())
+        val notification = buildNotification()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            startForeground(
+                NOTIF_ID,
+                notification,
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_CAMERA
+            )
+        } else {
+            startForeground(NOTIF_ID, notification)
+        }
         startCameraAnalysis()
     }
 
@@ -73,7 +83,6 @@ class TrackingService : LifecycleService(), GestureEngine.Output {
         gestureEngine.calibrateRequested = true
     }
 
-    /** Re-read SharedPreferences (call after the user changes a slider/switch). */
     fun reloadSettings() {
         appSettings = AppSettings(this)
         gestureEngine.applyConfig(appSettings)
@@ -165,8 +174,6 @@ class TrackingService : LifecycleService(), GestureEngine.Output {
         }
         gestureEngine.onFrame(pts, 1.0f, timestamp)
     }
-
-    // ---------------- GestureEngine.Output → NavAccessibilityService ----------------
 
     private fun a11y(): NavAccessibilityService? = NavAccessibilityService.instance
 
