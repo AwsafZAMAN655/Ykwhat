@@ -1,6 +1,7 @@
 package com.handnav.pro
 
 import android.accessibilityservice.AccessibilityService
+import android.content.Context
 import android.content.Intent
 import android.util.Log
 import android.view.accessibility.AccessibilityEvent
@@ -17,8 +18,20 @@ class TrackingService : AccessibilityService(), GestureEngine.Output {
 
     companion object {
         private const val TAG = "TrackingService"
+        var instance: TrackingService? = null
+            private set
         var isRunning = false
             private set
+
+        fun start(context: Context) {
+            val intent = Intent(context, TrackingService::class.java)
+            ContextCompat.startForegroundService(context, intent)
+        }
+
+        fun stop(context: Context) {
+            val intent = Intent(context, TrackingService::class.java)
+            context.stopService(intent)
+        }
     }
 
     private lateinit var appSettings: AppSettings
@@ -28,14 +41,20 @@ class TrackingService : AccessibilityService(), GestureEngine.Output {
 
     override fun onCreate() {
         super.onCreate()
+        instance = this
         appSettings = AppSettings(this)
         gestureEngine = GestureEngine(this).apply {
             applyConfig(appSettings)
         }
         cameraExecutor = Executors.newSingleThreadExecutor()
         isRunning = true
+        TrackingState.running = true
 
         startCameraAnalysis()
+    }
+
+    fun startCalibration() {
+        gestureEngine.calibrateRequested = true
     }
 
     private fun startCameraAnalysis() {
@@ -66,6 +85,7 @@ class TrackingService : AccessibilityService(), GestureEngine.Output {
                 Log.d(TAG, "Camera analysis bound successfully")
             } catch (e: Exception) {
                 Log.e(TAG, "Use case binding failed", e)
+                TrackingState.error = e.localizedMessage
             }
         }, ContextCompat.getMainExecutor(this))
     }
@@ -84,41 +104,22 @@ class TrackingService : AccessibilityService(), GestureEngine.Output {
                 pts[2 * i + 1] = landmarks[i].y()
             }
         }
-        
-        // Pass flattened landmarks and aspect ratio to engine
         gestureEngine.onFrame(pts, 1.0f, timestamp)
     }
 
     // ---------------- GestureEngine.Output Implementations ----------------
 
-    override fun pointer(x: Float, y: Float, mode: Int) {
-        // Update floating pointer overlay position and state
-    }
-
-    override fun tap(x: Float, y: Float) {
-        // Perform click action via accessibility injection or gesture dispatch
-    }
-
-    override fun strokeBegin(x: Float, y: Float, holdMs: Long) {
-        // Start drag/scroll stroke
-    }
-
-    override fun strokeMove(x: Float, y: Float) {
-        // Update drag/scroll stroke position
-    }
-
-    override fun strokeEnd() {
-        // Finish drag/scroll stroke
-    }
-
+    override fun pointer(x: Float, y: Float, mode: Int) {}
+    override fun tap(x: Float, y: Float) {}
+    override fun strokeBegin(x: Float, y: Float, holdMs: Long) {}
+    override fun strokeMove(x: Float, y: Float) {}
+    override fun strokeEnd() {}
     override fun back() {
         performGlobalAction(GLOBAL_ACTION_BACK)
     }
-
     override fun pausedChanged(paused: Boolean) {
         Log.d(TAG, "Paused state changed: $paused")
     }
-
     override fun calibrated(cx: Float, cy: Float) {
         Log.d(TAG, "Calibrated at cx=$cx, cy=$cy")
     }
@@ -135,7 +136,9 @@ class TrackingService : AccessibilityService(), GestureEngine.Output {
 
     override fun onDestroy() {
         super.onDestroy()
+        instance = null
         isRunning = false
+        TrackingState.running = false
         handAnalyzer?.close()
         handAnalyzer = null
         cameraExecutor.shutdown()
