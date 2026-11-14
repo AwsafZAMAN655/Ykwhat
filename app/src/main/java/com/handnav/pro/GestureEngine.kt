@@ -69,14 +69,19 @@ class GestureEngine(private val out: Output) {
         private set
 
     fun applyConfig(s: AppSettings) {
-        val sens = s.detectionConfidence // adapted to use confidence/settings mapping
-        pinchOn = 0.16f + 0.24f * sens
+        // sensitivity 0..100 → pinch thresholds (lower = easier pinch)
+        val sens = (s.sensitivity.coerceIn(0, 100) / 100f)
+        pinchOn = 0.16f + 0.24f * (1f - sens)
         pinchOff = pinchOn * 1.55f
-        gain = 1.0f + 3.0f * 0.5f
-        minCutoff = 4.0f - 3.6f * 0.5f
-        invertScroll = false
-        centerX = 0.5f
-        centerY = 0.5f
+        // speed 0..100 → pointer gain
+        val spd = (s.speed.coerceIn(0, 100) / 100f)
+        gain = 1.0f + 3.0f * spd
+        // smoothing 0..100 → One Euro minCutoff (higher smoothing = lower cutoff)
+        val sm = (s.smoothing.coerceIn(0, 100) / 100f)
+        minCutoff = 4.0f - 3.6f * sm
+        invertScroll = s.invertScroll
+        centerX = s.centerX
+        centerY = s.centerY
     }
 
     // ---------------- State ----------------
